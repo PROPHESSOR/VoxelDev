@@ -18,6 +18,7 @@ class Cube {
         const vtx7 = new Vertex(vtx2.x, vtx1.y, vtx2.z); // Правый верхний дальний
         const vtx9 = new Vertex(vtx2.x, vtx2.y, vtx2.z); // Правый нижний дальний
         const vtx10 = new Vertex(vtx1.x, vtx2.y, vtx2.z); // Левый нижний дальний
+
         // Front
         this.plane1 = new Plane('z', vtx1, vtx4);
         // Back

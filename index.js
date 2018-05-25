@@ -23,16 +23,16 @@ const Global = {
             console.log(code);
             switch (code) {
             case 38:
-                Global.renderer.camera.rotation.x += 0.5;
-                break;
-            case 39:
                 Global.renderer.camera.rotation.y += 0.5;
                 break;
+            case 39:
+                Global.renderer.camera.rotation.x += 0.5;
+                break;
             case 40:
-                Global.renderer.camera.rotation.x -= 0.5;
+                Global.renderer.camera.rotation.y -= 0.5;
                 break;
             case 37:
-                Global.renderer.camera.rotation.y -= 0.5;
+                Global.renderer.camera.rotation.x -= 0.5;
                 break;
             default:
                 break;
