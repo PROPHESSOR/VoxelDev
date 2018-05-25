@@ -1,0 +1,36 @@
+<body onload="start()">
+	<canvas id="glcanvas" width="640" height="480">
+		Your browser doesn't appear to support the HTML5
+		<code>&lt;canvas&gt;</code> element.
+	</canvas>
+
+	<script>
+		function initWebGL(canvas) {
+			gl = null;
+
+			try {
+				// Попытаться получить стандартный контекст. Если не получится, попробовать получить экспериментальный.
+				gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+			}
+			catch (e) { }
+
+			// Если мы не получили контекст GL, завершить работу
+			if (!gl) {
+				alert("Unable to initialize WebGL. Your browser may not support it.");
+				gl = null;
+			}
+
+			return gl;
+		}
+	</script>
+	<script src="utils/eventemitter.js"></script>
+	<script src="utils/gl-matrix.js"></script>
+	<script src="render/class/Vertex.js"></script>
+	<script src="render/class/Plane.js"></script>
+	<script src="render/class/Cube.js"></script>
+	<script src="index.js"></script>
+	<script src="io/Keyboard.js"></script>
+	<!-- Shaders -->
+	<script src="shaders/source.vsh"></script>
+	<script src="shaders/source.fsh"></script>
+</body>
