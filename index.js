@@ -60,8 +60,8 @@ const Global = {
         const programInfo = {
             "program": shaderProgram,
             "attribLocations": {
-                "vertexPosition": gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-                "vertexColor": gl.getAttribLocation(shaderProgram, 'aVertexColor')
+                "vertexPosition": gl.getAttribLocation(shaderProgram, 'aVertexPosition')
+                // "vertexColor": gl.getAttribLocation(shaderProgram, 'aVertexColor')
             },
             "uniformLocations": {
                 "projectionMatrix": gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
@@ -141,7 +141,7 @@ const Global = {
     //
     // Draw the scene.
     //
-    function drawScene(gl, programInfo, buffers, deltaTime) {
+    function drawScene(gl, programInfo, buffers) {
         gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
         gl.clearDepth(1.0);                 // Clear everything
         gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -163,7 +163,6 @@ const Global = {
         const zNear = 0.1;
         const zFar = 100.0;
         const projectionMatrix = mat4.create();
-        let cubeRotation = 0;
 
         // note: glmatrix.js always has the first argument
         // as the destination to receive the result.
@@ -191,24 +190,26 @@ const Global = {
         mat4.rotate(
             modelViewMatrix,                                      // destination matrix
             modelViewMatrix,                                      // matrix to rotate
-            cubeRotation + Global.renderer.camera.rotation.z,     // amount to rotate in radians
+            Global.renderer.camera.rotation.z,     // amount to rotate in radians
             [0, 0, 1]
         );                                                        // axis to rotate around (Z)
         mat4.rotate(
             modelViewMatrix,                                      // destination matrix
             modelViewMatrix,                                      // matrix to rotate
-            cubeRotation + Global.renderer.camera.rotation.x,     // amount to rotate in radians
+            Global.renderer.camera.rotation.x,     // amount to rotate in radians
             [0, 1, 0]
         );                                                        // axis to rotate around (X)
         mat4.rotate(
             modelViewMatrix,                                      // destination matrix
             modelViewMatrix,                                      // matrix to rotate
-            cubeRotation + Global.renderer.camera.rotation.y,     // amount to rotate in radians
+            Global.renderer.camera.rotation.y,     // amount to rotate in radians
             [1, 0, 0]
         );                                                        // axis to rotate around (Y)
 
         // Tell WebGL how to pull out the positions from the position
         // buffer into the vertexPosition attribute
+
+        const elements = initObjects();
         {
             const numComponents = 3;
             const type = gl.FLOAT;
@@ -225,11 +226,18 @@ const Global = {
                 offset
             );
             gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+            for (const element of elements) {
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(element), gl.STATIC_DRAW)
+                // gl.bufferData(
+                //     gl.ELEMENT_ARRAY_BUFFER,
+                //     new Uint16Array(Cube.cubeVertexIndices), gl.STATIC_DRAW
+                // );
+            }
         }
 
         // Tell WebGL how to pull out the colors from the color buffer
         // into the vertexColor attribute.
-        {
+        /* {
             const numComponents = 4;
             const type = gl.FLOAT;
             const normalize = false;
@@ -245,7 +253,7 @@ const Global = {
                 offset
             );
             gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
-        }
+        } */
 
         // Tell WebGL which indices to use to index the vertices
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
@@ -267,16 +275,17 @@ const Global = {
             modelViewMatrix
         );
 
-        {
+        /* {
             const vertexCount = 36;
             const type = gl.UNSIGNED_SHORT;
             const offset = 0;
             gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
-        }
+        } */
+        gl.drawArrays(gl.TRIANGLES, 0, 16)
+    }
 
-        // Update the rotation for the next draw
-
-        cubeRotation += deltaTime;
+    function initObjects() {
+        return []//new Cube(new Vertex(-1, -1, -1), new Vertex(1, 1, 1))];
     }
 
 
@@ -303,7 +312,7 @@ const Global = {
 
         const positions = [];
         for (const i of cube) {
-            positions.push(i);
+            positions.push(i); // TODO: [...cube]
         }
 
         // Now pass the list of positions into WebGL to build the
@@ -343,6 +352,6 @@ const Global = {
             "position": positionBuffer,
             "color": colorBuffer,
             "indices": indexBuffer
-        };
+        }
     }
 }());

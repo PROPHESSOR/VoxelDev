@@ -51,7 +51,7 @@ class Cube {
                 this.colors = this.colors.concat(c);
             }
         }
-		
+
         this.colorBuffer = gl.createBuffer();
     }
 
@@ -65,7 +65,8 @@ class Cube {
     }
 
     static get cubeVertexIndices() {
-        return [
+        return [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,40,31,32,33,34,35,36];
+        [
             0, 0x1, 2, /*  */0, 2, 3,      // front
             4, 0x5, 6, /*  */4, 6, 7,      // back
             8, 0x9, 10, /* */8, 10, 11,    // top
