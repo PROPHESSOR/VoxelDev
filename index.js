@@ -1,357 +1,226 @@
-/* global gl, Cube, Vertex, mat4 */
-/* eslint-disable no-alert */
+'use strict';
 
-const Global = {
-    "shaders": {
-        "vertex": {},
-        "fragment": {}
-    },
-    "renderer": {
-        "camera": {
-            "position": new Vertex(0, 0, 0),
-            "rotation": new Vertex(0, 0, 0)
-        }
-    }
-};
+if (!Detector.webgl) {
 
-(function () {
-    'use strict';
+    Detector.addGetWebGLMessage();
+    document.getElementById('container').innerHTML = "";
 
-    window.start = () => {
+}
 
-        Global.Keyboard.on('keydown', (code) => {
-            console.log(code);
-            switch (code) {
-            case 38:
-                Global.renderer.camera.rotation.y += 0.5;
-                break;
-            case 39:
-                Global.renderer.camera.rotation.x += 0.5;
-                break;
-            case 40:
-                Global.renderer.camera.rotation.y -= 0.5;
-                break;
-            case 37:
-                Global.renderer.camera.rotation.x -= 0.5;
-                break;
-            default:
-                break;
-            }
-        })
+let container;
 
-        const canvas = document.querySelector('#glcanvas');
+let camera;
+let controls;
+let scene;
+let renderer;
 
-        window.gl = canvas.getContext('webgl');
+let mesh;
 
-        const vsSource = Global.shaders.vertex.source;
+const worldWidth = 2;
+const worldDepth = 2;
+const worldHalfWidth = worldWidth / 2;
+const worldHalfDepth = worldDepth / 2;
+const data = generateHeight(worldWidth, worldDepth);
 
-        // Fragment shader program
+const clock = new THREE.Clock();
 
-        const fsSource = Global.shaders.fragment.source;
+const heightmap = [1, 0, 0, 1];
 
-        // Initialize a shader program; this is where all the lighting
-        // for the vertices and so forth is established.
-        const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+init();
+animate();
 
-        // Collect all the info needed to use the shader program.
-        // Look up which attributes our shader program is using
-        // for aVertexPosition, aVevrtexColor and also
-        // look up uniform locations.
-        const programInfo = {
-            "program": shaderProgram,
-            "attribLocations": {
-                "vertexPosition": gl.getAttribLocation(shaderProgram, 'aVertexPosition')
-                // "vertexColor": gl.getAttribLocation(shaderProgram, 'aVertexColor')
-            },
-            "uniformLocations": {
-                "projectionMatrix": gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-                "modelViewMatrix": gl.getUniformLocation(shaderProgram, 'uModelViewMatrix')
-            }
-        };
+function init() {
 
-        // Here's where we call the routine that builds all the
-        // objects we'll be drawing.
-        const buffers = initBuffers(gl);
+    container = document.getElementById('container');
 
-        let then = 0;
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 20000);
+    camera.position.y = getY(worldHalfWidth, worldHalfDepth) * 100 + 100;
 
-        // Draw the scene repeatedly
-        function render(now) {
-            now *= 0.001;  // convert to seconds
-            const deltaTime = 10 + now - then;
-            then = now;
+    controls = new THREE.FirstPersonControls(camera);
 
-            drawScene(gl, programInfo, buffers, deltaTime);
+    controls.movementSpeed = 1000;
+    controls.lookSpeed = 0.125;
+    controls.lookVertical = true;
 
-            requestAnimationFrame(render);
-        }
-        requestAnimationFrame(render);
-    }
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xbfd1e5);
+
+    // sides
+
+    const matrix = new THREE.Matrix4();
+
+    const pxGeometry = new THREE.PlaneBufferGeometry(100, 100);
+    pxGeometry.attributes.uv.array[1] = 0.5;
+    pxGeometry.attributes.uv.array[3] = 0.5;
+    pxGeometry.rotateY(Math.PI / 2);
+    pxGeometry.translate(50, 0, 0);
+
+    const nxGeometry = new THREE.PlaneBufferGeometry(100, 100);
+    nxGeometry.attributes.uv.array[1] = 0.5;
+    nxGeometry.attributes.uv.array[3] = 0.5;
+    nxGeometry.rotateY(-Math.PI / 2);
+    nxGeometry.translate(-50, 0, 0);
+
+    const pyGeometry = new THREE.PlaneBufferGeometry(100, 100);
+    pyGeometry.attributes.uv.array[5] = 0.5;
+    pyGeometry.attributes.uv.array[7] = 0.5;
+    pyGeometry.rotateX(-Math.PI / 2);
+    pyGeometry.translate(0, 50, 0);
+
+    const pzGeometry = new THREE.PlaneBufferGeometry(100, 100);
+    pzGeometry.attributes.uv.array[1] = 0.5;
+    pzGeometry.attributes.uv.array[3] = 0.5;
+    pzGeometry.translate(0, 0, 50);
+
+    const nzGeometry = new THREE.PlaneBufferGeometry(100, 100);
+    nzGeometry.attributes.uv.array[1] = 0.5;
+    nzGeometry.attributes.uv.array[3] = 0.5;
+    nzGeometry.rotateY(Math.PI);
+    nzGeometry.translate(0, 0, -50);
 
     //
-    // Initialize a shader program, so WebGL knows how to draw our data
-    //
-    function initShaderProgram(gl, vsSource, fsSource) {
-        const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
-        const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
 
-        // Create the shader program
+    // BufferGeometry cannot be merged yet.
+    const tmpGeometry = new THREE.Geometry();
+    const pxTmpGeometry = new THREE.Geometry().fromBufferGeometry(pxGeometry);
+    const nxTmpGeometry = new THREE.Geometry().fromBufferGeometry(nxGeometry);
+    const pyTmpGeometry = new THREE.Geometry().fromBufferGeometry(pyGeometry);
+    const pzTmpGeometry = new THREE.Geometry().fromBufferGeometry(pzGeometry);
+    const nzTmpGeometry = new THREE.Geometry().fromBufferGeometry(nzGeometry);
 
-        const shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+    for (let z = 0; z < worldDepth; z++) {
 
-        // If creating the shader program failed, alert
+        for (let x = 0; x < worldWidth; x++) {
 
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            alert(`Unable to initialize the shader program: ${gl.getProgramInfoLog(shaderProgram)}`);
-            return null;
-        }
+            const h = getY(x, z);
 
-        return shaderProgram;
-    }
-
-    //
-    // creates a shader of the given type, uploads the source and
-    // compiles it.
-    //
-    function loadShader(gl, type, source) {
-        const shader = gl.createShader(type);
-
-        // Send the source to the shader object
-
-        gl.shaderSource(shader, source);
-
-        // Compile the shader program
-
-        gl.compileShader(shader);
-
-        // See if it compiled successfully
-
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert(`An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`);
-            gl.deleteShader(shader);
-            return null;
-        }
-
-        return shader;
-    }
-
-    //
-    // Draw the scene.
-    //
-    function drawScene(gl, programInfo, buffers) {
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
-        gl.clearDepth(1.0);                 // Clear everything
-        gl.enable(gl.DEPTH_TEST);           // Enable depth testing
-        gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
-
-        // Clear the canvas before we start drawing on it.
-
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-        // Create a perspective matrix, a special matrix that is
-        // used to simulate the distortion of perspective in a camera.
-        // Our field of view is 45 degrees, with a width/height
-        // ratio that matches the display size of the canvas
-        // and we only want to see objects between 0.1 units
-        // and 100 units away from the camera.
-
-        const fieldOfView = 45 * Math.PI / 180;   // in radians
-        const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-        const zNear = 0.1;
-        const zFar = 100.0;
-        const projectionMatrix = mat4.create();
-
-        // note: glmatrix.js always has the first argument
-        // as the destination to receive the result.
-        mat4.perspective(
-            projectionMatrix,
-            fieldOfView,
-            aspect,
-            zNear,
-            zFar
-        );
-
-        // Set the drawing position to the "identity" point, which is
-        // the center of the scene.
-        const modelViewMatrix = mat4.create();
-
-        // Now move the drawing position a bit to where we want to
-        // start drawing the square.
-
-        mat4.translate(
-            modelViewMatrix,                                      // destination matrix
-            modelViewMatrix,                                      // matrix to translate
-            [-0.0, 0.0, -6.0]
-        );                                                        // amount to translate
-
-        mat4.rotate(
-            modelViewMatrix,                                      // destination matrix
-            modelViewMatrix,                                      // matrix to rotate
-            Global.renderer.camera.rotation.z,     // amount to rotate in radians
-            [0, 0, 1]
-        );                                                        // axis to rotate around (Z)
-        mat4.rotate(
-            modelViewMatrix,                                      // destination matrix
-            modelViewMatrix,                                      // matrix to rotate
-            Global.renderer.camera.rotation.x,     // amount to rotate in radians
-            [0, 1, 0]
-        );                                                        // axis to rotate around (X)
-        mat4.rotate(
-            modelViewMatrix,                                      // destination matrix
-            modelViewMatrix,                                      // matrix to rotate
-            Global.renderer.camera.rotation.y,     // amount to rotate in radians
-            [1, 0, 0]
-        );                                                        // axis to rotate around (Y)
-
-        // Tell WebGL how to pull out the positions from the position
-        // buffer into the vertexPosition attribute
-
-        const elements = initObjects();
-        {
-            const numComponents = 3;
-            const type = gl.FLOAT;
-            const normalize = false;
-            const stride = 0;
-            const offset = 0;
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-            gl.vertexAttribPointer(
-                programInfo.attribLocations.vertexPosition,
-                numComponents,
-                type,
-                normalize,
-                stride,
-                offset
+            matrix.makeTranslation(
+                x * 100 - worldHalfWidth * 100,
+                h * 100,
+                z * 100 - worldHalfDepth * 100
             );
-            gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
-            for (const element of elements) {
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(element), gl.STATIC_DRAW)
-                // gl.bufferData(
-                //     gl.ELEMENT_ARRAY_BUFFER,
-                //     new Uint16Array(Cube.cubeVertexIndices), gl.STATIC_DRAW
-                // );
+
+            const px = getY(x + 1, z);
+            const nx = getY(x - 1, z);
+            const pz = getY(x, z + 1);
+            const nz = getY(x, z - 1);
+
+            tmpGeometry.merge(pyTmpGeometry, matrix);
+
+            if ((px !== h && px !== h + 1) || x === 0) {
+
+                tmpGeometry.merge(pxTmpGeometry, matrix);
+
             }
+
+            if ((nx !== h && nx !== h + 1) || x === worldWidth - 1) {
+
+                tmpGeometry.merge(nxTmpGeometry, matrix);
+
+            }
+
+            if ((pz !== h && pz !== h + 1) || z === worldDepth - 1) {
+
+                tmpGeometry.merge(pzTmpGeometry, matrix);
+
+            }
+
+            if ((nz !== h && nz !== h + 1) || z === 0) {
+
+                tmpGeometry.merge(nzTmpGeometry, matrix);
+
+            }
+
         }
 
-        // Tell WebGL how to pull out the colors from the color buffer
-        // into the vertexColor attribute.
-        /* {
-            const numComponents = 4;
-            const type = gl.FLOAT;
-            const normalize = false;
-            const stride = 0;
-            const offset = 0;
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
-            gl.vertexAttribPointer(
-                programInfo.attribLocations.vertexColor,
-                numComponents,
-                type,
-                normalize,
-                stride,
-                offset
-            );
-            gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
-        } */
-
-        // Tell WebGL which indices to use to index the vertices
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-
-        // Tell WebGL to use our program when drawing
-
-        gl.useProgram(programInfo.program);
-
-        // Set the shader uniforms
-
-        gl.uniformMatrix4fv(
-            programInfo.uniformLocations.projectionMatrix,
-            false,
-            projectionMatrix
-        );
-        gl.uniformMatrix4fv(
-            programInfo.uniformLocations.modelViewMatrix,
-            false,
-            modelViewMatrix
-        );
-
-        /* {
-            const vertexCount = 36;
-            const type = gl.UNSIGNED_SHORT;
-            const offset = 0;
-            gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
-        } */
-        gl.drawArrays(gl.TRIANGLES, 0, 16)
     }
 
-    function initObjects() {
-        return []//new Cube(new Vertex(-1, -1, -1), new Vertex(1, 1, 1))];
-    }
+    const geometry = new THREE.BufferGeometry().fromGeometry(tmpGeometry);
+    geometry.computeBoundingSphere();
+
+    const texture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/minecraft/atlas.png');
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.LinearMipMapLinearFilter;
+
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ "map": texture }));
+    scene.add(mesh);
+
+    const ambientLight = new THREE.AmbientLight(0xcccccc);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+    directionalLight.position.set(1, 1, 0.5).normalize();
+    scene.add(directionalLight);
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    container.innerHTML = "";
+
+    container.appendChild(renderer.domElement);
+
+    window.addEventListener('resize', onWindowResize, false);
+
+}
+
+function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    controls.handleResize();
+
+}
+
+function generateHeight(width, height) {
+    let data = [], perlin = new ImprovedNoise(),
+        size = width * height, quality = 2, z = Math.random() * 100;
+
+    for (let j = 0; j < 4; j++) {
+
+        if (j === 0) for (let i = 0; i < size; i++) data[i] = 0;
+
+        for (let i = 0; i < size; i++) {
+
+            let x = i % width, y = (i / width) | 0;
+            data[i] += perlin.noise(x / quality, y / quality, z) * quality;
 
 
-    //
-    // initBuffers
-    //
-    // Initialize the buffers we'll need. For this demo, we just
-    // have one object -- a simple three-dimensional cube.
-    //
-    function initBuffers(gl) {
-
-        // Create a buffer for the cube's vertex positions.
-
-        const positionBuffer = gl.createBuffer();
-
-        // Select the positionBuffer as the one to apply buffer
-        // operations to from here out.
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-        // Now create an array of positions for the cube.
-
-        const cube = new Cube(new Vertex(0, 0, 0), new Vertex(1, 1, 1));
-
-        const positions = [];
-        for (const i of cube) {
-            positions.push(i); // TODO: [...cube]
         }
 
-        // Now pass the list of positions into WebGL to build the
-        // shape. We do this by creating a Float32Array from the
-        // JavaScript array, then use it to fill the current buffer.
+        quality *= 4;
 
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-
-        // Now set up the colors for the faces. We'll use solid colors
-        // for each face.
-
-        const { colors, colorBuffer } = cube;
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-
-        // Build the element array buffer; this specifies the indices
-        // into the vertex arrays for each face's vertices.
-
-        const indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-
-        // This array defines each face as two triangles, using the
-        // indices into the vertex array to specify each triangle's
-        // position.
-
-        const indices = Cube.cubeVertexIndices;
-
-        // Now send the element array to GL
-
-        gl.bufferData(
-            gl.ELEMENT_ARRAY_BUFFER,
-            new Uint16Array(indices), gl.STATIC_DRAW
-        );
-
-        return {
-            "position": positionBuffer,
-            "color": colorBuffer,
-            "indices": indexBuffer
-        }
     }
-}());
+
+    return data;
+
+    // return [0]
+}
+
+function getY(x, z) {
+    return heightmap[z * worldWidth + x];
+    // return Math.floor(Math.random() * 10);
+    // return (data[x + z * worldWidth]/*  * 0.2 */) | 0;
+
+}
+
+//
+
+function animate() {
+
+    requestAnimationFrame(animate);
+
+    render();
+    // stats.update();
+
+}
+
+function render() {
+
+    controls.update(clock.getDelta());
+    renderer.render(scene, camera);
+
+}
