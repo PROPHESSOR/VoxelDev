@@ -9,7 +9,7 @@ THREE.FirstPersonControls = function (object, domElement) {
     this.object = object;
     this.target = new THREE.Vector3(0, 0, 0);
 
-    this.domElement = (domElement !== undefined) ? domElement : document;
+    this.domElement = (typeof domElement !== 'undefined') ? domElement : document;
 
     this.enabled = true;
 
@@ -89,9 +89,14 @@ THREE.FirstPersonControls = function (object, domElement) {
 
             switch (event.button) {
 
-            case 0: this.moveForward = true; break;
-            case 2: this.moveBackward = true; break;
-
+            case 0:
+                this.moveForward = true;
+                break;
+            case 2:
+                this.moveBackward = true;
+                break;
+            default:
+                break;
             }
 
         }
@@ -109,8 +114,14 @@ THREE.FirstPersonControls = function (object, domElement) {
 
             switch (event.button) {
 
-            case 0: this.moveForward = false; break;
-            case 2: this.moveBackward = false; break;
+            case 0:
+                this.moveForward = false;
+                break;
+            case 2:
+                this.moveBackward = false;
+                break;
+            default:
+                break;
 
             }
 
@@ -143,22 +154,36 @@ THREE.FirstPersonControls = function (object, domElement) {
         switch (event.keyCode) {
 
         case 38: /*up*/
-        case 87: /*W*/ this.moveForward = true; break;
+        case 87: /*W*/
+            this.moveForward = true;
+            break;
 
         case 37: /*left*/
-        case 65: /*A*/ this.moveLeft = true; break;
+        case 65: /*A*/
+            this.moveLeft = true;
+            break;
 
         case 40: /*down*/
-        case 83: /*S*/ this.moveBackward = true; break;
+        case 83: /*S*/
+            this.moveBackward = true;
+            break;
 
         case 39: /*right*/
-        case 68: /*D*/ this.moveRight = true; break;
+        case 68: /*D*/
+            this.moveRight = true;
+            break;
 
-        case 82: /*R*/ this.moveUp = true; break;
-        case 70: /*F*/ this.moveDown = true; break;
+        case 82: /*R*/
+            this.moveUp = true;
+            break;
 
+        case 70: /*F*/
+            this.moveDown = true;
+            break;
+
+        default:
+            break;
         }
-
     };
 
     this.onKeyUp = function (event) {
@@ -166,20 +191,33 @@ THREE.FirstPersonControls = function (object, domElement) {
         switch (event.keyCode) {
 
         case 38: /*up*/
-        case 87: /*W*/ this.moveForward = false; break;
+        case 87: /*W*/ 
+            this.moveForward = false; 
+            break;
 
         case 37: /*left*/
-        case 65: /*A*/ this.moveLeft = false; break;
+        case 65: /*A*/
+            this.moveLeft = false; 
+            break;
 
         case 40: /*down*/
-        case 83: /*S*/ this.moveBackward = false; break;
+        case 83: /*S*/
+            this.moveBackward = false; 
+            break;
 
         case 39: /*right*/
-        case 68: /*D*/ this.moveRight = false; break;
+        case 68: /*D*/
+            this.moveRight = false; 
+            break;
 
-        case 82: /*R*/ this.moveUp = false; break;
-        case 70: /*F*/ this.moveDown = false; break;
-
+        case 82: /*R*/
+            this.moveUp = false; 
+            break;
+        case 70: /*F*/
+            this.moveDown = false; 
+            break;
+        default:
+            break;
         }
 
     };
@@ -226,8 +264,8 @@ THREE.FirstPersonControls = function (object, domElement) {
 
         }
 
-        let targetPosition = this.target,
-            position = this.object.position;
+        const targetPosition = this.target;
+        const { position } = this.object;
 
         targetPosition.x = position.x + 100 * Math.sin(this.phi) * Math.cos(this.theta);
         targetPosition.y = position.y + 100 * Math.cos(this.phi);
@@ -255,11 +293,11 @@ THREE.FirstPersonControls = function (object, domElement) {
 
     };
 
-    var _onMouseMove = bind(this, this.onMouseMove);
-    var _onMouseDown = bind(this, this.onMouseDown);
-    var _onMouseUp = bind(this, this.onMouseUp);
-    var _onKeyDown = bind(this, this.onKeyDown);
-    var _onKeyUp = bind(this, this.onKeyUp);
+    const _onMouseMove = bind(this, this.onMouseMove); // eslint-disable-line
+    const _onMouseDown = bind(this, this.onMouseDown); // eslint-disable-line
+    const _onMouseUp = bind(this, this.onMouseUp); // eslint-disable-line
+    const _onKeyDown = bind(this, this.onKeyDown); // eslint-disable-line
+    const _onKeyUp = bind(this, this.onKeyUp); // eslint-disable-line
 
     this.domElement.addEventListener('contextmenu', contextmenu, false);
     this.domElement.addEventListener('mousemove', _onMouseMove, false);
@@ -270,13 +308,9 @@ THREE.FirstPersonControls = function (object, domElement) {
     window.addEventListener('keyup', _onKeyUp, false);
 
     function bind(scope, fn) {
-
         return function () {
-
-            fn.apply(scope, arguments);
-
+            fn.apply(scope, arguments); // eslint-disable-line
         };
-
     }
 
     this.handleResize();
