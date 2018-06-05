@@ -6,7 +6,10 @@
     },
     "globals": {
         "Global": false,
-        "EventEmitter": false
+        "EventEmitter": false,
+        "THREE": false,
+        "Detector": false,
+        "ImprovedNoise": false
     },
     "extends": "eslint:recommended",
     "rules": {
@@ -113,8 +116,8 @@
         "multiline-comment-style": "off",
         "new-cap": "error",
         "new-parens": "error",
-        "newline-after-var": "off",
-        "newline-before-return": "off",
+        "newline-after-var": "error",
+        "newline-before-return": "error",
         "newline-per-chained-call": "off",
         "no-alert": "error",
         "no-array-constructor": "error",
@@ -142,7 +145,7 @@
         "no-extra-label": "error",
         "no-extra-parens": "off",
         "no-floating-decimal": "error",
-        "no-implicit-globals": "error",
+        "no-implicit-globals": "off",
         "no-implied-eval": "error",
         "no-inline-comments": "off",
         "no-inner-declarations": [
